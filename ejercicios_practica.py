@@ -16,6 +16,7 @@ __email__ = "alumnos@inove.com.ar"
 __version__ = "1.1"
 
 import sqlite3
+from typing import NamedTuple
 
 # https://extendsclass.com/sqlite-browser.html
 
@@ -54,8 +55,8 @@ def create_schema():
     conn.close()
 
 
-def fill():
-    print('Completemos esta tablita!')
+def fill(id, name, age, grade, tutor=""):
+    # print('Completemos esta tablita!')
     # Llenar la tabla de la secundaria con al menos 5 estudiantes
     # Cada estudiante tiene los posibles campos:
     # id --> este campo es auto incremental por lo que no deberá completarlo
@@ -67,6 +68,18 @@ def fill():
     # Se debe utilizar la sentencia INSERT.
     # Observar que hay campos como "grade" y "tutor" que no son obligatorios
     # en el schema creado, puede obivar en algunos casos completar esos campos
+    conn = sqlite3.connect('secundaria.db')
+    c = conn.cursor()
+
+    values = [id,name, age, grade, tutor]
+
+    c.execute("""
+        INSERT INTO estudiante (id,name, age, grade, tutor)
+        VALUES (?,?,?,?,?);""", values)
+
+    conn.commit()
+    # Cerrar la conexión con la base de datos
+    conn.close()
 
 
 def fetch():
@@ -74,7 +87,21 @@ def fetch():
     # Utilizar la sentencia SELECT para imprimir en pantalla
     # todas las filas con todas sus columnas
     # Utilizar fetchone para imprimir de una fila a la vez
+    # Conectarse a la base de datos
+    conn = sqlite3.connect('secundaria.db')
+    c = conn.cursor()
 
+    # Leer todas las filas y obtener todos los datos juntos
+    c.execute('SELECT * FROM estudiante')
+    data = c.fetchall()
+    print(data)
+    
+    for row in c.execute('SELECT * FROM estudiante'):
+        print(row)
+    
+    conn.commit()
+
+    conn.close()
 
 def search_by_grade(grade):
     print('Operación búsqueda!')
@@ -84,33 +111,84 @@ def search_by_grade(grade):
     # De la lista de esos estudiantes el SELECT solo debe traer
     # las siguientes columnas por fila encontrada:
     # id / name / age
+    conn = sqlite3.connect('secundaria.db')
+    c = conn.cursor()
+
+    for row in c.execute("SELECT id, name, age FROM estudiante WHERE grade =?",(grade,)):
+        print('Selección:', row)
 
 
-def insert(grade):
+    conn.commit()
+
+    conn.close()
+
+
+def insert(group):
     print('Nuevos ingresos!')
+
     # Utilizar la sentencia INSERT para ingresar nuevos estudiantes
     # a la secundaria
+    conn = sqlite3.connect('secundaria.db')
+    c = conn.cursor()
+
+    c.executemany('''
+                    INSERT INTO estudiante(id,name,age,grade,tutor)
+                    VALUES(?,?,?,?,?);''',group )
+    for row in c.execute('SELECT * FROM estudiante'):
+        print(row)
+
+    conn.commit()
+
+    conn.close()
 
 
-def modify(id, name):
+def modify(name, id):
     print('Modificando la tabla')
     # Utilizar la sentencia UPDATE para modificar aquella fila (estudiante)
     # cuyo id sea el "id" pasado como parámetro,
     # modificar su nombre por "name" pasado como parámetro
+    conn = sqlite3.connect('secundaria.db')
+    c = conn.cursor()
 
+    rowcount = c.execute("UPDATE estudiante SET name =? WHERE id =?",
+                        (name, id)).rowcount
+
+    print('Estudiante actualizado:', rowcount)
+
+    conn.commit()
+    
+    conn.close()
 
 if __name__ == '__main__':
     print("Bienvenidos a otra clase de Inove con Python")
     create_schema()   # create and reset database (DB)
     # fill()
+    fill(1,'Pedro',18,6,'Inove')
+    fill(2,'Juan',17,3,'Johana')
+    fill(3,'Marina',18,6,'Hernán')
+    fill(4,'Amancay',19,5,'Inove')
+    fill(5,'Nelson',18,3,)
+    fill(6,'Pedro',17,6,'Hernán')
+    
+    
     # fetch()
+    fetch()
 
     grade = 3
     # search_by_grade(grade)
+    search_by_grade(grade)
 
-    new_student = ['You', 16]
+    # new_student = ['You', 16]
     # insert(new_student)
+    group = [(7,'Maxy', 20, 5,'Inove'),
+             (8,'Sandra', 18, 6, 'Hernán'),
+             (9,'Pedro', 20, 4, 'Johana'),
+             ]
 
-    name = '¿Inove?'
+    insert(group)
+
     id = 2
+    name = '¿Inove?'
+
     # modify(id, name)
+    modify(id, name)
